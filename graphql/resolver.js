@@ -11,12 +11,12 @@ const resolvers = {
       await task.save();
       return task;
     },
-    updateTask: async (_, { id, completed }) => {
+    updateTask: async (_, { id, completed }) => { 
       return await Task.findByIdAndUpdate(id, { completed }, { new: true });
     },
     deleteTask: async (_, { id }) => {
       await Task.findByIdAndDelete(id);
-      return "Task Deleted";
+      return "Task Deleted!";
     },
   },
 };
