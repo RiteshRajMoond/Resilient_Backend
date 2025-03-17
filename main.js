@@ -25,17 +25,17 @@ app.use("/tasks", taskRoutes);
 
 // GraphQL API
 async function startServer() {
-    try {
-        const server = new ApolloServer({typeDefs, resolvers});
-        await server.start();
-        app.use("/graphql", expressMiddleware(server));
+  try {
+    const server = new ApolloServer({ typeDefs, resolvers });
+    await server.start();
+    app.use("/graphql", expressMiddleware(server));
 
-        const PORT = process.env.PORT || 9090;
-        app.listen(PORT, () => console.log(`Server running on part ${PORT}`));
-    } catch (error) {
-        console.error(error);
-        process.exit(1);
-    }
+    const PORT = process.env.PORT || 9090;
+    app.listen(PORT, () => console.log(`Server running on part ${PORT}`));
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
 }
 
 startServer();

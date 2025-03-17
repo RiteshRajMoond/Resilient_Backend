@@ -40,9 +40,9 @@ exports.updateTask = async (req, res, next) => {
     const { id } = req.params;
     const task = await Task.findByIdAndUpdate(id, req.body, { new: true });
     return res.status(200).json({
-        success: true,
-        data: task,
-    })
+      success: true,
+      data: task,
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -53,17 +53,17 @@ exports.updateTask = async (req, res, next) => {
 
 // @desc Delete a task
 exports.deleteTask = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        await Task.findByIdAndDelete(id);
-        return res.status(200).json({
-            success: true,
-            data: {},
-        })
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message
-        })
-    }
-}
+  try {
+    const { id } = req.params;
+    await Task.findByIdAndDelete(id);
+    return res.status(200).json({
+      success: true,
+      data: {},
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
