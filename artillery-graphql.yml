@@ -1,0 +1,53 @@
+config:
+  target: "http://localhost:9090"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  # step-1 Add a new Task
+  - name: "GraphQL API - Add a task and use its ID"
+    flow:
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation {
+                addTask(title: "GraphQL Test Task") {
+                  id
+                  title
+                  completed
+                }
+              }
+          capture:
+            - json: "$.data.addTask.id"
+              as: taskId
+
+      # step-2 Update the task
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation {
+                updateTask(id: "{{taskId}}", completed: true) {
+                  id
+                  title
+                  completed
+                }
+              }
+
+      # step-3 Delete the task
+      - post:
+          url: "/graphql"
+          json:
+            query: |
+              mutation {
+                deleteTask(id: "{{taskId}}") {
+                  id
+                  title
+                  completed
+                }
+              }

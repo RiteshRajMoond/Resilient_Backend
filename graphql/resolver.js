@@ -15,8 +15,10 @@ const resolvers = {
       return await Task.findByIdAndUpdate(id, { completed }, { new: true });
     },
     deleteTask: async (_, { id }) => {
-      await Task.findByIdAndDelete(id);
-      return "Task Deleted!";
+      const deletedTask = await Task.findByIdAndDelete(id);
+      if(!deletedTask) 
+          throw new Error("Task not found");
+      return deletedTask;
     },
   },
 };

@@ -18,7 +18,7 @@ app.use(json());
 connectDB();
 
 // morgan logging
-app.use(morgan("dev"));
+app.use(morgan(":method :url :res[content-length] - :response-time ms"));
 
 // rest api
 app.use("/tasks", taskRoutes);

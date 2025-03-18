@@ -1,0 +1,31 @@
+config:
+  target: "http://localhost:9090"
+  phases:
+    - duration: 60
+      arrivalRate: 50
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "REST API - Create a task and use its ID"
+    flow:
+      # Step 1: Create a new task
+      - post:
+          url: "/tasks"
+          json:
+            title: "Test Task"
+            completed: false
+          capture:
+            - json: "$.data._id" # Correct JSON path to capture the 'id' field
+              as: taskId
+
+      # Step 2: Update the created task using the captured ID
+      - put:
+          url: "/tasks/{{taskId}}"
+          json:
+            completed: true
+
+      # Step 3: Delete the created task using the captured ID
+      - delete:
+          url: "/tasks/{{taskId}}"
