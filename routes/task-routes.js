@@ -5,8 +5,12 @@ const router = express.Router();
 const taskController = require("../controller/task-controller");
 
 router.get("/", taskController.getTasks);
+
 router.post("/", taskController.createTask);
+router.post("/batch", taskController.batchTasks);
+
 router.put("/:id", taskController.updateTask);
+
 router.delete("/:id", taskController.deleteTask);
 
 module.exports = router;

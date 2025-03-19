@@ -67,3 +67,66 @@ exports.deleteTask = async (req, res, next) => {
     });
   }
 };
+
+// @desc Batching multiple tasks
+exports.batchTasks = async (req, res, next) => {
+  try {
+    const { operations } = req.body; // expecting an arrat
+    if (!Array.isArray(operations) || operations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid or empty operation array",
+      });
+    }
+
+    const results = await Promise.all(
+      operations.map(async (operation) => {
+        const { method, endpoint, data } = operation;
+
+        switch (method.toUpperCase()) {
+          case "GET":
+            if (endpoint === "/tasks") {
+              return await Task.find();
+            }
+            break;
+
+          case "POST":
+            if (endpoint === "/tasks") {
+              const task = new Task(data);
+              await task.save();
+              return task;
+            }
+            break;
+
+          case "PUT":
+            if (endpoint.startWith("/tasks/")) {
+              const id = endpoint.split("/")[2];
+              return await Task.findByIdAndUpdate(id, data, { new: true });
+            }
+            break;
+
+          case "DELETE":
+            if (endpoint.startWith("/tasks/")) {
+              const id = endpoint.split("/")[2];
+              await Task.findByIdAndDelete(id);
+              return { success: true, id };
+            }
+            break;
+
+          default:
+            return { error: `Unsupported Method: ${method}` };
+        }
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
