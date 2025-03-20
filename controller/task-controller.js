@@ -3,19 +3,38 @@ const Task = require("../models/Task");
 // @desc Get all tasks
 exports.getTasks = async (req, res, next) => {
   try {
-    const tasks = await Task.find();
-    return res.status(200).json({
-      success: true,
-      count: tasks.length,
-      data: tasks,
-    });
+    // extract page and limit and set defaul
+    const {page = 1, limit = 10} = req.query;
+
+    // convert to integers
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    // Fetch tasks with pagination
+    const tasks = await Task.find()
+      .skip((pageNumber - 1) * limitNumber) // skipping documents for prev pages
+      .limit(limitNumber) // limit the number of docs per page
+
+      // Get the total count of tasks
+      const total = await Task.countDocuments();
+
+      // return paginated response
+      return res.status(200).json({
+        success: true,
+        count: tasks.length,
+        total,
+        page: pageNumber, // current page
+        pages: Math.ceil(total / limitNumber), // Total Number of pages
+        data: tasks, // Paginated tasks
+      })
+
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: error.message,
-    });
+      error: error.message
+    })
   }
-};
+}
 
 // @desc Create a task
 exports.createTask = async (req, res, next) => {
