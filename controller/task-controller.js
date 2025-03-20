@@ -14,6 +14,8 @@ exports.getTasks = async (req, res, next) => {
     const tasks = await Task.find()
       .skip((pageNumber - 1) * limitNumber) // skipping documents for prev pages
       .limit(limitNumber) // limit the number of docs per page
+      .lean();
+      // lean() converts mongoose documents to plain JS objects. Mongoose docs are heavier than plain js as they contain extra methds like getters and setters
 
       // Get the total count of tasks
       const total = await Task.countDocuments();
