@@ -152,9 +152,50 @@ exports.batchTasks = async (req, res, next) => {
 };
 
 // @desc Search Tasks by title
+// When there are very big amounts of docs in mongodb, it is not a good
+// idea to use .skip() fro pagination as it is very slow. We can use range-based
+// pagination
+
+// exports.searchTasks = async (req, res, next) => {
+//   try {
+//     const { search, page = 1, limit = 10 } = req.query;
+
+//     if (!search) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "Search query is required",
+//       });
+//     }
+
+//     const pageNumber = parseInt(page);
+//     const limitNumber = parseInt(limit);
+
+//     // performing Search
+//     const tasks = await Task.find({ $text: { $search: search } })
+//       .skip((pageNumber - 1) * limitNumber)
+//       .limit(limitNumber)
+//       .lean();
+
+//     // const total = await Task.countDocuments({ $text: { $search: search } });
+//     return res.status(200).json({
+//       success: true,
+//       count: tasks.length,
+//       // total,
+//       page: pageNumber,
+//       // pages: Math.ceil(total / limitNumber),
+//       data: tasks,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       succes: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.searchTasks = async (req, res, next) => {
   try {
-    const { search, page = 1, limit = 10 } = req.query;
+    const { search, limit = 10, lastId } = req.query;
 
     if (!search) {
       return res.status(400).json({
@@ -163,27 +204,27 @@ exports.searchTasks = async (req, res, next) => {
       });
     }
 
-    const pageNumber = parseInt(page);
-    const limitNumber = parseInt(limit);
+    const limitNumer = parseInt(limit);
+    const query = { $text: { $search: search } };
 
-    // performing Search
-    const tasks = await Task.find({ $text: { $search: search } })
-      .skip((pageNumber - 1) * limitNumber)
-      .limit(limitNumber)
+    if (lastId) {
+      query._id = { $gt: lastId };
+    }
+
+    const tasks = await Task.find(query)
+      .sort({ _id: 1 })
+      .limit(limitNumer)
       .lean();
 
-    // const total = await Task.countDocuments({ $text: { $search: search } });
     return res.status(200).json({
       success: true,
       count: tasks.length,
-      // total,
-      page: pageNumber,
-      // pages: Math.ceil(total / limitNumber),
       data: tasks,
+      lastId: tasks.length > 0 ? tasks[tasks.length - 1]._id : null,
     });
   } catch (error) {
     return res.status(500).json({
-      succes: false,
+      success: false,
       error: error.message,
     });
   }
