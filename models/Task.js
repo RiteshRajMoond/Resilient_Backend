@@ -15,6 +15,7 @@ const TaskSchema = new mongoose.Schema(
 );
 
 // Adding indexes for optimised queries
+
 // TaskSchema.index({createdAt: 1}); // ascending order on createdAt
 
 // We have removed this index after adding compund index as compound index 
@@ -22,9 +23,13 @@ const TaskSchema = new mongoose.Schema(
 // So this was redundant. So as to reduce the space we can remove this index without 
 // affecting performance.
 
+// Simple Index
 TaskSchema.index({updatedAt: 1}); // ascending order on updatedAt
 
 // Compound Index
 TaskSchema.index({createdAt: 1, completed: 1}); // ascending order on createdAt and completed
+
+// Text Indexing
+TaskSchema.index({title: "text"});
 
 module.exports = mongoose.model("Task", TaskSchema);

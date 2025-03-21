@@ -4,7 +4,7 @@ const Task = require("../models/Task");
 exports.getTasks = async (req, res, next) => {
   try {
     // extract page and limit and set defaul
-    const {page = 1, limit = 10} = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     // convert to integers
     const pageNumber = parseInt(page);
@@ -15,28 +15,27 @@ exports.getTasks = async (req, res, next) => {
       .skip((pageNumber - 1) * limitNumber) // skipping documents for prev pages
       .limit(limitNumber) // limit the number of docs per page
       .lean();
-      // lean() converts mongoose documents to plain JS objects. Mongoose docs are heavier than plain js as they contain extra methds like getters and setters
+    // lean() converts mongoose documents to plain JS objects. Mongoose docs are heavier than plain js as they contain extra methds like getters and setters
 
-      // Get the total count of tasks
-      const total = await Task.countDocuments();
+    // Get the total count of tasks
+    const total = await Task.countDocuments();
 
-      // return paginated response
-      return res.status(200).json({
-        success: true,
-        count: tasks.length,
-        total,
-        page: pageNumber, // current page
-        pages: Math.ceil(total / limitNumber), // Total Number of pages
-        data: tasks, // Paginated tasks
-      })
-
+    // return paginated response
+    return res.status(200).json({
+      success: true,
+      count: tasks.length,
+      total,
+      page: pageNumber, // current page
+      pages: Math.ceil(total / limitNumber), // Total Number of pages
+      data: tasks, // Paginated tasks
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: error.message
-    })
+      error: error.message,
+    });
   }
-}
+};
 
 // @desc Create a task
 exports.createTask = async (req, res, next) => {
@@ -147,6 +146,44 @@ exports.batchTasks = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
+      error: error.message,
+    });
+  }
+};
+
+// @desc Search Tasks by title
+exports.searchTasks = async (req, res, next) => {
+  try {
+    const { search, page = 1, limit = 10 } = req.query;
+
+    if (!search) {
+      return res.status(400).json({
+        success: false,
+        error: "Search query is required",
+      });
+    }
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    // performing Search
+    const tasks = await Task.find({ $text: { $search: search } })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
+      .lean();
+
+    // const total = await Task.countDocuments({ $text: { $search: search } });
+    return res.status(200).json({
+      success: true,
+      count: tasks.length,
+      // total,
+      page: pageNumber,
+      // pages: Math.ceil(total / limitNumber),
+      data: tasks,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      succes: false,
       error: error.message,
     });
   }
