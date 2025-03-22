@@ -1,10 +1,24 @@
 const Task = require("../models/Task");
+const redisClient = require("../config/redis");
 
 // @desc Get all tasks
 exports.getTasks = async (req, res, next) => {
   try {
-    // extract page and limit and set defaul
+    // extract page and limit and set default
     const { page = 1, limit = 10 } = req.query;
+
+    // create the cache key
+    const cacheKey = `tasks:page=${page}:limit=${limit}`;
+
+    // check the cache
+    const cachedData = await redisClient.get(cacheKey);
+    if(cachedData) {
+      return res.status(200).json({
+        success: true,
+        data: JSON.parse(cachedData),
+        source: "cache",
+      })
+    }
 
     // convert to integers
     const pageNumber = parseInt(page);
@@ -17,18 +31,28 @@ exports.getTasks = async (req, res, next) => {
       .lean();
     // lean() converts mongoose documents to plain JS objects. Mongoose docs are heavier than plain js as they contain extra methds like getters and setters
 
+    // Very expensice call
     // Get the total count of tasks
-    const total = await Task.countDocuments();
+    // const total = await Task.countDocuments();
+
+    const response = {
+      success: true,
+      count: tasks.length,
+      page: pageNumber,
+      data: tasks,
+    }
+
+    // cache the data
+    await redisClient.set(cacheKey, JSON.stringify(response), {
+      EX: 60*2, // 2 minutes
+    })
 
     // return paginated response
     return res.status(200).json({
       success: true,
-      count: tasks.length,
-      total,
-      page: pageNumber, // current page
-      pages: Math.ceil(total / limitNumber), // Total Number of pages
-      data: tasks, // Paginated tasks
-    });
+      source: "database",
+      data: response,
+    })
   } catch (error) {
     return res.status(500).json({
       success: false,
