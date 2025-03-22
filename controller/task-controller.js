@@ -12,12 +12,12 @@ exports.getTasks = async (req, res, next) => {
 
     // check the cache
     const cachedData = await redisClient.get(cacheKey);
-    if(cachedData) {
+    if (cachedData) {
       return res.status(200).json({
         success: true,
         data: JSON.parse(cachedData),
         source: "cache",
-      })
+      });
     }
 
     // convert to integers
@@ -40,19 +40,19 @@ exports.getTasks = async (req, res, next) => {
       count: tasks.length,
       page: pageNumber,
       data: tasks,
-    }
+    };
 
     // cache the data
     await redisClient.set(cacheKey, JSON.stringify(response), {
-      EX: 60*2, // 2 minutes
-    })
+      EX: 60 * 2, // 2 minutes
+    });
 
     // return paginated response
     return res.status(200).json({
       success: true,
       source: "database",
       data: response,
-    })
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -235,16 +235,42 @@ exports.searchTasks = async (req, res, next) => {
       query._id = { $gt: lastId };
     }
 
+    // generate a unique cache key
+    const cacheKey = `search:query=${search}:limit=${limit}=${
+      lastId || "null"
+    }`;
+
+    // check if the data exists
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        data: JSON.parse(cachedData),
+      });
+    }
+
     const tasks = await Task.find(query)
       .sort({ _id: 1 })
       .limit(limitNumer)
       .lean();
 
-    return res.status(200).json({
-      success: true,
+    const response = {
       count: tasks.length,
       data: tasks,
       lastId: tasks.length > 0 ? tasks[tasks.length - 1]._id : null,
+    };
+
+    // cache the data
+    await redisClient.set(cacheKey, JSON.stringify(response), {
+      EX: 60 * 2, // 2 mins
+    });
+
+    return res.status(200).json({
+      sucess: true,
+      source: "database",
+      data: response,
     });
   } catch (error) {
     return res.status(500).json({
