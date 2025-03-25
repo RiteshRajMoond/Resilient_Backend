@@ -7,6 +7,7 @@ const { expressMiddleware } = require("@apollo/server/express4");
 
 const connectDB = require("./config/db");
 const taskRoutes = require("./routes/task-routes");
+const authRoutes = require("./routes/auth-routes");
 const errorHandler = require("./middleware/error-handler");
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/resolver");
@@ -26,6 +27,9 @@ app.use(morgan(":method :url :res[content-length] - :response-time ms"));
 
 // rest api
 app.use("/tasks", taskRoutes);
+
+// auth routes
+app.use("/auth", authRoutes);
 
 // GraphQL API
 async function startServer() {
