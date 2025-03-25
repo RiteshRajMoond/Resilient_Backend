@@ -10,9 +10,13 @@ const taskRoutes = require("./routes/task-routes");
 const errorHandler = require("./middleware/error-handler");
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/resolver");
+const limiter = require("./middleware/rate-limiter");
 
 const app = express();
 app.use(json());
+
+// rate limiter
+app.use(limiter);
 
 // connect to database
 connectDB();
