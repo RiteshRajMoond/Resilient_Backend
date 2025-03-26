@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
+const helmet = require("helmet");
 const { json } = require("body-parser");
 const { ApolloServer } = require("@apollo/server");
 const { expressMiddleware } = require("@apollo/server/express4");
@@ -15,19 +16,20 @@ const limiter = require("./middleware/rate-limiter");
 const throttle = require("./middleware/ip-throttler");
 
 const app = express();
+app.use(helmet()); // security headers
 app.use(json());
+
+// morgan logging
+app.use(morgan(":method :url :res[content-length] - :response-time ms"));
+
+// connect to database
+connectDB();
 
 // ip-based rate limiting
 app.use(limiter);
 
 // ip-based throttling
 app.use(throttle);
-
-// connect to database
-connectDB();
-
-// morgan logging
-app.use(morgan(":method :url :res[content-length] - :response-time ms"));
 
 // rest api
 app.use("/tasks", taskRoutes);
@@ -54,3 +56,9 @@ startServer();
 
 // error handler
 app.use(errorHandler);
+
+// handling termial signals
+process.on("SIGINT", async () => {
+  console.log("Shutting down server");
+  process.exit(0);
+});
