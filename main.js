@@ -12,12 +12,16 @@ const errorHandler = require("./middleware/error-handler");
 const typeDefs = require("./graphql/schema");
 const resolvers = require("./graphql/resolver");
 const limiter = require("./middleware/rate-limiter");
+const throttle = require("./middleware/ip-throttler");
 
 const app = express();
 app.use(json());
 
-// rate limiter
+// ip-based rate limiting
 app.use(limiter);
+
+// ip-based throttling
+app.use(throttle);
 
 // connect to database
 connectDB();
