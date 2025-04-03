@@ -1,3 +1,4 @@
+const { Worker } = require("worker_threads");
 const Task = require("../models/Task");
 const redisClient = require("../config/redis");
 
@@ -114,58 +115,45 @@ exports.deleteTask = async (req, res, next) => {
 
 // @desc Batching multiple tasks
 exports.batchTasks = async (req, res, next) => {
+  const { operations } = req.body;
+
+  if (!Array.isArray(operations) || operations.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid opereations",
+    });
+  }
+
   try {
-    const { operations } = req.body; // expecting an arrat
-    if (!Array.isArray(operations) || operations.length === 0) {
-      return res.status(400).json({
+    const worker = new Worker("../workers/batch-worker.js", { eval: false });
+    worker.postMessage(operations);
+
+    worker.on("message", (message) => {
+      if (message.success) {
+        return res.status(200).json({
+          success: true,
+          data: message.data,
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          error: error.message,
+        });
+      }
+    });
+
+    worker.on("error", (error) => {
+      return res.status(500).json({
         success: false,
-        error: "Invalid or empty operation array",
+        error: "Worker error",
+        details: error.message,
       });
-    }
+    });
 
-    const results = await Promise.all(
-      operations.map(async (operation) => {
-        const { method, endpoint, data } = operation;
-
-        switch (method.toUpperCase()) {
-          case "GET":
-            if (endpoint === "/tasks") {
-              return await Task.find();
-            }
-            break;
-
-          case "POST":
-            if (endpoint === "/tasks") {
-              const task = new Task(data);
-              await task.save();
-              return task;
-            }
-            break;
-
-          case "PUT":
-            if (endpoint.startWith("/tasks/")) {
-              const id = endpoint.split("/")[2];
-              return await Task.findByIdAndUpdate(id, data, { new: true });
-            }
-            break;
-
-          case "DELETE":
-            if (endpoint.startWith("/tasks/")) {
-              const id = endpoint.split("/")[2];
-              await Task.findByIdAndDelete(id);
-              return { success: true, id };
-            }
-            break;
-
-          default:
-            return { error: `Unsupported Method: ${method}` };
-        }
-      })
-    );
-
-    return res.status(200).json({
-      success: true,
-      data: results,
+    worker.on("exit", (code) => {
+      if (code !== 0) {
+        console.error(`Worker stopped with exit code ${code}`);
+      }
     });
   } catch (error) {
     return res.status(500).json({

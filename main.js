@@ -26,10 +26,10 @@ app.use(morgan(":method :url :res[content-length] - :response-time ms"));
 connectDB();
 
 // ip-based rate limiting
-app.use(limiter);
+// app.use(limiter);
 
 // ip-based throttling
-app.use(throttle);
+// app.use(throttle);
 
 // rest api
 app.use("/tasks", taskRoutes);
